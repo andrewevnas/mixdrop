@@ -14,6 +14,7 @@ track progress, review and approve mixes in-browser. Currently a PROTOTYPE.
 ## Commands
 - `pnpm dev` | `pnpm check` (lint+typecheck+unit) | `pnpm test:db` + `pnpm e2e` (need `pnpm sb:start`, Docker)
 - `pnpm sb:start` / `pnpm sb:stop` / `pnpm sb:status` for local Supabase (Mailpit inbox: http://127.0.0.1:54324)
+- `pnpm r2:check` (R2 presigned flow smoke test) · `pnpm e2e:big` (5 GB upload, slow, opt-in) — setup in docs/r2-setup.md
 - `pnpm db:generate` then `pnpm db:migrate` for schema changes
 - `stripe listen --forward-to localhost:3000/api/webhooks/stripe` for payment work
 
@@ -48,6 +49,6 @@ track progress, review and approve mixes in-browser. Currently a PROTOTYPE.
 
 ## Current phase
 <!-- Update this line as you go -->
-Phase 4 — client uploads. (Phase 3 orders + state machine done 2026-09-27.)
+Phase 5 — deliveries + player. (Phase 4 client uploads done 2026-09-27.)
 
 @AGENTS.md

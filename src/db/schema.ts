@@ -187,3 +187,41 @@ export const orderEvents = pgTable(
 export type Order = typeof orders.$inferSelect;
 export type OrderEvent = typeof orderEvents.$inferSelect;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+export const fileKindEnum = pgEnum("file_kind", ["stems", "project", "reference", "demo", "delivery"]);
+export const fileStatusEnum = pgEnum("file_status", ["pending", "complete", "failed"]);
+
+// Bytes live in R2 only (private bucket); this row is the index and the access-control anchor.
+export const files = pgTable(
+  "files",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "restrict" }),
+    uploaderId: uuid("uploader_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "restrict" }),
+    kind: fileKindEnum("kind").notNull(),
+    r2Key: text("r2_key").notNull().unique(),
+    // Sanitised folder path from the client's upload, e.g. "Session/Audio Files/Kick.wav".
+    relativePath: text("relative_path").notNull(),
+    originalName: text("original_name").notNull(),
+    sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+    mime: text("mime").notNull(),
+    sha256: text("sha256"),
+    status: fileStatusEnum("status").notNull().default("pending"),
+    // Private: the R2 multipart upload id, bound on first use so only one upload can target this row.
+    uploadId: text("upload_id"),
+    ...timestamps,
+  },
+  (t) => [
+    index("files_order_id_status_idx").on(t.orderId, t.status),
+    check("files_size_range", sql`${t.sizeBytes} between 0 and 10737418240`),
+    check("files_relative_path_length", sql`char_length(${t.relativePath}) between 1 and 512`),
+    check("files_original_name_length", sql`char_length(${t.originalName}) between 1 and 255`),
+    check("files_mime_length", sql`char_length(${t.mime}) <= 255`),
+  ],
+).enableRLS();
+
+export type FileRow = typeof files.$inferSelect;

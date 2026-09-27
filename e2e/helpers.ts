@@ -58,3 +58,49 @@ export async function setUpEngineerWithService(
   await expect(page).toHaveURL(/\/engineer\/services$/);
   return slug;
 }
+
+/** A client (signed in on `client`) with a paid order on a fresh engineer's service. Returns the order id. */
+export async function createPaidOrder(client: Page, engineer: Page, songTitle = "Night Drive"): Promise<string> {
+  const slug = await setUpEngineerWithService(engineer);
+  await signUpAndConfirm(client, "client", uniqueEmail("artist"));
+  await client.goto(`/e/${slug}`);
+  await client.getByRole("link", { name: "Order" }).click();
+  await client.getByLabel("Song title").fill(songTitle);
+  await client.getByLabel("Artist name").fill("Ana");
+  await client.getByRole("button", { name: "Place order" }).click();
+  await expect(client).toHaveURL(/\/client\/orders\/[0-9a-f-]{36}$/);
+  await client.getByRole("button", { name: "Simulate payment" }).click();
+  await expect(client.getByTestId("order-status")).toHaveText("New — awaiting acceptance");
+  return new URL(client.url()).pathname.split("/").at(-1)!;
+}
+
+export const r2Configured = () =>
+  !!(process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET);
+
+/** Make showDirectoryPicker() hand back the origin-private file system, which tests can read back. */
+export async function stubDirectoryPickerWithOpfs(page: Page) {
+  await page.addInitScript(() => {
+    (window as unknown as { showDirectoryPicker: () => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker =
+      async () => {
+        const root = await navigator.storage.getDirectory();
+        return root.getDirectoryHandle("download", { create: true });
+      };
+  });
+}
+
+/** Every file under the stubbed download folder: { "Session/Audio Files/Kick.wav": size }. */
+export async function readOpfsTree(page: Page): Promise<Record<string, number>> {
+  return page.evaluate(async () => {
+    const out: Record<string, number> = {};
+    type Dir = FileSystemDirectoryHandle & { entries(): AsyncIterable<[string, FileSystemHandle]> };
+    async function walk(dir: Dir, prefix: string) {
+      for await (const [name, handle] of dir.entries()) {
+        if (handle.kind === "directory") await walk(handle as Dir, `${prefix}${name}/`);
+        else out[`${prefix}${name}`] = (await (handle as FileSystemFileHandle).getFile()).size;
+      }
+    }
+    const root = await navigator.storage.getDirectory();
+    await walk((await root.getDirectoryHandle("download")) as Dir, "");
+    return out;
+  });
+}

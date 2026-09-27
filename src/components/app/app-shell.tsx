@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
 import type { Profile } from "@/db/schema";
-import { signOut } from "@/server/auth/actions";
+
+import { SignOutButton } from "./sign-out-button";
 
 const NAV: Record<Profile["role"], { href: string; label: string }[]> = {
   client: [{ href: "/client", label: "Orders" }],
@@ -30,11 +30,7 @@ export function AppShell({ profile, children }: { profile: Profile; children: Re
           <span className="text-muted-foreground">
             {profile.displayName} · {profile.role}
           </span>
-          <form action={signOut}>
-            <Button type="submit" variant="outline" size="sm">
-              Sign out
-            </Button>
-          </form>
+          <SignOutButton />
         </div>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 p-4">{children}</main>

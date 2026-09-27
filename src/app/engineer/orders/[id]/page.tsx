@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
+import { OrderFiles } from "@/components/files/order-files";
 import { actionsFor } from "@/components/orders/action-config";
 import { OrderActions } from "@/components/orders/order-actions";
 import { OrderHistory } from "@/components/orders/order-history";
@@ -19,6 +20,7 @@ export default async function EngineerOrderPage({ params }: PageProps<"/engineer
     <div className="grid gap-8">
       <OrderSummary order={order} counterpart="Client" />
       <OrderActions orderId={order.id} actions={actionsFor("engineer", order)} />
+      <OrderFiles order={order} viewerId={user.id} role="engineer" />
       <section className="grid gap-3">
         <h2 className="font-medium">History</h2>
         <OrderHistory events={events} />

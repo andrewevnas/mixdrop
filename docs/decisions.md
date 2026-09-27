@@ -35,3 +35,14 @@ Short log of non-obvious choices (newest last).
 - `order_events.seq` (identity) gives a stable order when timestamps tie. Engineers never see or act on drafts.
 - TEMPORARY: `DEV_FAKE_PAYMENTS` "Simulate payment" button (server-checked, never in production). Delete `src/server/orders/dev-payments.ts` and its button in Phase 6; the webhook's draft→paid must verify amount paid == `order.price_pence`.
 - FOLLOW-UP (review, LOW): no cap on draft orders per client — add with Phase 8 rate limiting.
+
+## 2026-09-27 — Phase 4: client uploads + folder download
+- Uppy v6 `@uppy/aws-s3` with `signRequest`: the browser asks us to presign each S3 multipart op. The server only signs create/part/list/complete/abort, for the caller's own *pending* file, on a key it built at registration (`orders/{order}/{kind}/{fileId}/{safeName}`). Never single PUT or DeleteObject; expiry fixed at 15 min.
+- The multipart upload id is bound to the file row on first use. `/complete` locks the row (no more signing), aborts every other multipart upload on the key, then HEADs and only marks complete if the size matches — so a second, oversized upload can't be swapped in after verification (security review, MED).
+- Resume: Golden Retriever remembers in-flight uploads; browsers can't keep a 5 GB File across a refresh, so the client re-adds the same folder. Registration is idempotent on (path, size, kind): finished files are skipped and partial ones resume via ListParts. Sign-out clears this browser-side state.
+- Download: File System Access API writes each file straight from R2 into a fresh `Mixdrop-<order>` subfolder (never into the picked folder itself, so client-chosen paths can't overwrite the engineer's files). Re-running skips files already there at the right size. Browsers without the API get per-file attachment links.
+- Limits: 10 GB/file, 20 GB and 5,000 files/order; paths sanitised server-side (traversal, Windows device names, `.git`/`.vscode`, 255-char segments) and again on the downloading client.
+- FOLLOW-UP: a job to fail stale pending rows (Phase 7), plus the R2 lifecycle rule in docs/r2-setup.md to abort abandoned multipart uploads.
+- Uppy sends files ≤ 5 MiB as a single PUT (not multipart). We sign those only for small pending files, with Content-Length in the signature — `pnpm r2:check` confirms R2 rejects any other body size (403).
+- The Uppy instance is destroyed on a deferred timer, not synchronously: React Strict Mode (dev) unmounts/remounts, and a synchronous destroy left the Dashboard dead.
+- Local disk is nearly full; `pnpm e2e:big` builds its 5 GB session from NTFS sparse files and verifies R2 sizes with 1-byte ranged GETs rather than writing 5 GB back to disk.
