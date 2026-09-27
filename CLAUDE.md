@@ -48,6 +48,6 @@ track progress, review and approve mixes in-browser. Currently a PROTOTYPE.
 
 ## Current phase
 <!-- Update this line as you go -->
-Phase 3 — orders + state machine. (Phase 2 engineer profile + services done 2026-09-27.)
+Phase 4 — client uploads. (Phase 3 orders + state machine done 2026-09-27.)
 
 @AGENTS.md

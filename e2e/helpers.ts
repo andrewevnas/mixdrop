@@ -39,3 +39,22 @@ export async function signUpAndConfirm(page: Page, role: "client" | "engineer", 
   // Same browser context, so the PKCE verifier cookie set at signup is present.
   await page.goto(await confirmationLink(email));
 }
+
+/** Signed-in engineer with a public profile and one active service. Returns the public slug. */
+export async function setUpEngineerWithService(
+  page: Page,
+  { service = "Full mix", price = "49.99" }: { service?: string; price?: string } = {},
+): Promise<string> {
+  const slug = `e2e-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+  await signUpAndConfirm(page, "engineer", uniqueEmail("eng"));
+  await page.goto("/engineer/profile");
+  await page.getByLabel(/Public URL/).fill(slug);
+  await page.getByRole("button", { name: "Save profile" }).click();
+  await expect(page.getByRole("status")).toContainText("Profile saved");
+  await page.goto("/engineer/services/new");
+  await page.getByLabel("Name").fill(service);
+  await page.getByLabel("Price (£)").fill(price);
+  await page.getByRole("button", { name: "Add service" }).click();
+  await expect(page).toHaveURL(/\/engineer\/services$/);
+  return slug;
+}

@@ -18,8 +18,9 @@
   turnaround_days, revisions_included, max_stems, active)
 - portfolio_items(id, engineer_id, title, artist, before_key?, after_key, preview_key, permission_confirmed)
 - orders(id, client_id, engineer_id, service_id, status, song_title, artist_name, brief_json,
-  price_pence, revision_count, due_at, accepted_at, delivered_at, approved_at, created_at)
-- order_events(id, order_id, actor_id|null, from_status, to_status, note, created_at)
+  price_pence, currency, turnaround_days, revisions_included, max_stems  -- snapshot of service terms,
+  revision_count, paid_at, due_at, accepted_at, delivered_at, approved_at, created_at, updated_at)
+- order_events(id, seq, order_id, actor_id|null, from_status|null, to_status, note, created_at)
 - files(id, order_id, uploader_id, kind: stems|project|reference|demo|delivery, r2_key,
   relative_path, original_name, size_bytes, mime, sha256, status: pending|complete|failed, created_at)
 - deliveries(id, order_id, version, label, master_file_id, preview_key, peaks_key,

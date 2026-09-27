@@ -164,3 +164,28 @@ export async function getPublicEngineer(slug: string): Promise<PublicEngineer | 
     services: activeServices,
   };
 }
+
+export type OrderableService = PublicService & { engineerName: string; engineerSlug: string };
+
+/** Public info for an active service, for the order form. null if missing or hidden. */
+export async function getOrderableService(serviceId: string): Promise<OrderableService | null> {
+  const [row] = await db
+    .select({
+      id: services.id,
+      name: services.name,
+      type: services.type,
+      pricePence: services.pricePence,
+      currency: services.currency,
+      turnaroundDays: services.turnaroundDays,
+      revisionsIncluded: services.revisionsIncluded,
+      maxStems: services.maxStems,
+      engineerName: profiles.displayName,
+      engineerSlug: engineerProfiles.slug,
+    })
+    .from(services)
+    .innerJoin(engineerProfiles, eq(engineerProfiles.userId, services.engineerId))
+    .innerJoin(profiles, eq(profiles.id, services.engineerId))
+    .where(and(eq(services.id, serviceId), eq(services.active, true)))
+    .limit(1);
+  return row ?? null;
+}

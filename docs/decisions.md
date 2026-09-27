@@ -26,3 +26,12 @@ Short log of non-obvious choices (newest last).
 - `/e/{slug}` selects an explicit column list (never Stripe fields), active services only, and renders per request (`connection()`) so hidden services and price changes show immediately.
 - Portfolio items deferred until uploads exist (Phase 4+).
 - FOLLOW-UP (security review, LOW): changing a slug frees the old one for anyone, so shared links could be hijacked. A small reserved-word list blocks obvious impersonation; keep a slug history (hold or redirect old slugs) before launch.
+
+## 2026-09-27 — Phase 3: orders + state machine
+- Rules live in pure `src/server/orders/rules.ts` (table mirrors docs/order-state-machine.md; a unit test parses the doc and fails if they drift). `transitionOrder()` in `machine.ts` is the only status writer: row lock + `WHERE status = from`, participant check, one `order_events` row per transition.
+- Orders snapshot the service's price and terms (turnaround, revisions, max stems, currency) so later service edits can't change an existing order. The client form echoes the price it showed; if the DB price differs, the order is refused instead of created at a price the client never saw.
+- Deadlines: refund-eligible when now > deadline + 10 days, deadline = `due_at`, or `paid_at` + turnaround if never accepted. Auto-approve after 7 days. Both take an injected clock for Phase 7 jobs.
+- Side effects (notify, refund, payout) are returned as data from each transition; Phase 6/7 dispatch them.
+- `order_events.seq` (identity) gives a stable order when timestamps tie. Engineers never see or act on drafts.
+- TEMPORARY: `DEV_FAKE_PAYMENTS` "Simulate payment" button (server-checked, never in production). Delete `src/server/orders/dev-payments.ts` and its button in Phase 6; the webhook's draft→paid must verify amount paid == `order.price_pence`.
+- FOLLOW-UP (review, LOW): no cap on draft orders per client — add with Phase 8 rate limiting.

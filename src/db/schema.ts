@@ -2,7 +2,19 @@
 // Every table enables RLS with no policies: Supabase's public REST API (anon/publishable key)
 // can't touch app data. The app reads and writes through its own server-side connection.
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  boolean,
+  check,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { authUsers } from "drizzle-orm/supabase";
 
 export const roleEnum = pgEnum("role", ["client", "engineer"]);
@@ -85,3 +97,93 @@ export const services = pgTable(
 export type EngineerProfile = typeof engineerProfiles.$inferSelect;
 export type Service = typeof services.$inferSelect;
 export type ServiceType = (typeof serviceTypeEnum.enumValues)[number];
+
+// See docs/order-state-machine.md. Status only changes via transitionOrder() in src/server/orders.
+export const ORDER_STATUSES = [
+  "draft",
+  "paid",
+  "accepted",
+  "declined",
+  "in_progress",
+  "delivered",
+  "revision_requested",
+  "approved",
+  "refund_eligible",
+  "refunded",
+  "completed",
+] as const;
+export const orderStatusEnum = pgEnum("order_status", ORDER_STATUSES);
+
+export type OrderBrief = { notes: string; referenceLinks: string[] };
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // Orders are financial records: participants and services can't be deleted out from under them.
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "restrict" }),
+    engineerId: uuid("engineer_id")
+      .notNull()
+      .references(() => engineerProfiles.userId, { onDelete: "restrict" }),
+    serviceId: uuid("service_id")
+      .notNull()
+      .references(() => services.id, { onDelete: "restrict" }),
+    status: orderStatusEnum("status").notNull().default("draft"),
+    songTitle: text("song_title").notNull(),
+    artistName: text("artist_name").notNull(),
+    brief: jsonb("brief_json").$type<OrderBrief>().notNull(),
+    // Snapshot of the service's terms when ordered; later service edits don't change the order.
+    pricePence: integer("price_pence").notNull(),
+    currency: text("currency").notNull(),
+    turnaroundDays: integer("turnaround_days").notNull(),
+    revisionsIncluded: integer("revisions_included").notNull(),
+    maxStems: integer("max_stems").notNull(),
+    revisionCount: integer("revision_count").notNull().default(0),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    dueAt: timestamp("due_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    index("orders_client_id_idx").on(t.clientId),
+    index("orders_engineer_id_idx").on(t.engineerId),
+    check("orders_price_range", sql`${t.pricePence} between 500 and 1000000`),
+    check("orders_currency_gbp", sql`${t.currency} = 'gbp'`),
+    check("orders_revision_count_range", sql`${t.revisionCount} between 0 and ${t.revisionsIncluded}`),
+    check("orders_song_title_length", sql`char_length(${t.songTitle}) between 1 and 120`),
+    check("orders_artist_name_length", sql`char_length(${t.artistName}) between 1 and 120`),
+    // Brief is ~4KB of notes + 3 links when validated; cap the raw JSON well above that.
+    check("orders_brief_size", sql`pg_column_size(${t.brief}) < 16384`),
+  ],
+).enableRLS();
+
+export const orderEvents = pgTable(
+  "order_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // Insertion order; timestamps can tie.
+    seq: bigint("seq", { mode: "number" }).generatedAlwaysAsIdentity(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    // null = system (webhook, scheduled job).
+    actorId: uuid("actor_id").references(() => profiles.id, { onDelete: "set null" }),
+    // null = order creation.
+    fromStatus: orderStatusEnum("from_status"),
+    toStatus: orderStatusEnum("to_status").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("order_events_order_id_seq_idx").on(t.orderId, t.seq),
+    check("order_events_note_length", sql`char_length(${t.note}) <= 2000`),
+  ],
+).enableRLS();
+
+export type Order = typeof orders.$inferSelect;
+export type OrderEvent = typeof orderEvents.$inferSelect;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];

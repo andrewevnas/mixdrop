@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { cache } from "react";
 
 import { ServiceSummary } from "@/components/engineer/service-summary";
+import { buttonVariants } from "@/components/ui/button";
 import { getPublicEngineer } from "@/server/data/engineers";
 import { slugSchema } from "@/server/engineers/schemas";
 
@@ -49,8 +51,14 @@ export default async function EngineerPublicPage({ params }: PageProps<"/e/[slug
         ) : (
           <ul className="grid gap-3">
             {engineer.services.map((s) => (
-              <li key={s.id} data-testid="public-service" className="rounded-lg border p-4">
+              <li key={s.id} data-testid="public-service" className="grid gap-3 rounded-lg border p-4">
                 <ServiceSummary service={s} />
+                <Link
+                  href={`/client/orders/new?service=${s.id}`}
+                  className={buttonVariants({ size: "sm", className: "justify-self-start" })}
+                >
+                  Order
+                </Link>
               </li>
             ))}
           </ul>

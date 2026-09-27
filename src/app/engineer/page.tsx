@@ -36,7 +36,11 @@ export default async function EngineerDashboard() {
           </p>
         </section>
       )}
-      <p className="text-muted-foreground">No incoming orders yet.</p>
+      <p>
+        <Link href="/engineer/orders" className="underline">
+          View orders
+        </Link>
+      </p>
     </div>
   );
 }

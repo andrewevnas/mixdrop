@@ -8,6 +8,7 @@ const NAV: Record<Profile["role"], { href: string; label: string }[]> = {
   client: [{ href: "/client", label: "Orders" }],
   engineer: [
     { href: "/engineer", label: "Dashboard" },
+    { href: "/engineer/orders", label: "Orders" },
     { href: "/engineer/profile", label: "Profile" },
     { href: "/engineer/services", label: "Services" },
   ],
