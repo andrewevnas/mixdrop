@@ -1,0 +1,3 @@
+#!/bin/sh
+# Local stand-in for CI: block the push if lint, typecheck or unit tests fail.
+pnpm check

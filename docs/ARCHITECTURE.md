@@ -33,8 +33,8 @@
 - notifications(id, user_id, type, order_id, read_at, created_at)
 
 ## Build phases (each ends with a "done" check)
-0. Scaffold: repo, lint/typecheck/test scripts, CI, env example.
-   DONE: `pnpm typecheck && pnpm test` pass in CI on an empty app.
+0. Scaffold: repo, lint/typecheck/test scripts, local pre-push checks, env example.
+   DONE: `pnpm typecheck && pnpm test` pass on an empty app (enforced by the pre-push hook).
 1. Auth + roles. DONE: sign up as client or engineer; each lands on its own dashboard;
    engineer routes 403 for clients.
 2. Engineer profile + services (public page /e/{slug}). DONE: logged-out visitor sees
