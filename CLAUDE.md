@@ -12,7 +12,7 @@ track progress, review and approve mixes in-browser. Currently a PROTOTYPE.
 - Email: Resend. Tests: Vitest (unit), Playwright (e2e)
 
 ## Commands
-- `pnpm dev` | `pnpm check` (lint+typecheck+unit) | `pnpm e2e` (needs `pnpm sb:start`, Docker)
+- `pnpm dev` | `pnpm check` (lint+typecheck+unit) | `pnpm test:db` + `pnpm e2e` (need `pnpm sb:start`, Docker)
 - `pnpm sb:start` / `pnpm sb:stop` / `pnpm sb:status` for local Supabase (Mailpit inbox: http://127.0.0.1:54324)
 - `pnpm db:generate` then `pnpm db:migrate` for schema changes
 - `stripe listen --forward-to localhost:3000/api/webhooks/stripe` for payment work
@@ -48,6 +48,6 @@ track progress, review and approve mixes in-browser. Currently a PROTOTYPE.
 
 ## Current phase
 <!-- Update this line as you go -->
-Phase 2 — engineer profile + services. (Phase 1 auth + roles done 2026-09-27.)
+Phase 3 — orders + state machine. (Phase 2 engineer profile + services done 2026-09-27.)
 
 @AGENTS.md

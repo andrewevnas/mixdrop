@@ -8,6 +8,20 @@
       "when": 1790530029602,
       "tag": "0000_romantic_the_order",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790531776168,
+      "tag": "0001_abnormal_mephistopheles",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790532266593,
+      "tag": "0002_shallow_magma",
+      "breakpoints": true
     }
   ]
 }
