@@ -49,7 +49,7 @@
    late → refund; replayed webhook causes no duplicate effect.
 7. Notifications + deadlines. DONE: every transition emails the other party; overdue job
    flags refund_eligible correctly in a test with a mocked clock.
-8. Hardening. DONE: security-reviewer run on full codebase with no HIGH findings;
+8. Hardening (incl. auth rate limiting, see docs/decisions.md). DONE: security-reviewer run on full codebase with no HIGH findings;
    IDOR tests for every data function; retention job deletes stems N days after completion.
 
 ## Later (scoped, not built)

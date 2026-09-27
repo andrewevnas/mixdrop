@@ -12,3 +12,10 @@ Short log of non-obvious choices (newest last).
 - GitHub Actions removed: it tried to bill the account card, even for a public repo.
 - `pnpm check` (lint + typecheck + unit tests) runs as a git pre-push hook in `.githooks/`; `pnpm install` sets `core.hooksPath` via `prepare`.
 - A failing check blocks the push. `git push --no-verify` bypasses it; don't, except in an emergency.
+
+## 2026-09-27 — Phase 1: auth + roles
+- Role picked at signup is only a *hint* in Supabase `user_metadata` (users can edit it). On email confirmation `/auth/callback` creates an insert-only `profiles` row from it; authorization reads `profiles` only, so a role can't change later.
+- Every table enables RLS with no policies: the publishable key can't reach app data through Supabase's REST API. The app uses its own server-side Drizzle connection.
+- Role checks run in each page (and data function), not just layouts — layouts don't re-render on client navigation. `forbidden()` (experimental `authInterrupts`) gives a real 403.
+- Local Supabase via CLI with unused services (storage, realtime, edge functions, analytics, Studio) off to save memory. Playwright runs 1 worker: parallel Chromium launches crashed on this Windows box.
+- KNOWN GAP (security review, MED): auth server actions call Supabase from the app server, so Supabase's per-IP rate limits see one IP. Add app-side rate limiting per client IP + email (or captcha) before production — scheduled for Phase 8 hardening.

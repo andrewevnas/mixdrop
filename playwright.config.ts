@@ -2,7 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: true,
+  // Parallel Chromium launches crash intermittently on Windows; tests also share one dev server.
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: "list",
